@@ -67,7 +67,7 @@ while running:
             spawn_timer = 0
             enemies.append(Enemy(random.randint(0, 700 - 64), -64))  # Spawn enemy at random x position
         for enemy in enemies:
-            enemy.update()
+            enemy.update(player.x)  # Pass player's x position for chasing behavior
         enemies_to_keep = []
         for enemy in enemies:
             if not enemy.is_off_screen():

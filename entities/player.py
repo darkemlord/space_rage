@@ -8,15 +8,23 @@ class Player:
         self.speed = 5
         self.images = {
             "straight": pg.image.load("assets/player/player_b_m.png").convert_alpha(),
-            "left": pg.image.load("assets/player/player_b_l1.png").convert_alpha(),
-            "right": pg.image.load("assets/player/player_b_r2.png").convert_alpha()
+            "left1": pg.image.load("assets/player/player_b_l1.png").convert_alpha(),
+            "left2": pg.image.load("assets/player/player_b_l2.png").convert_alpha(),
+            "right1": pg.image.load("assets/player/player_b_r1.png").convert_alpha(),
+            "right2": pg.image.load("assets/player/player_b_r2.png").convert_alpha()
         }
         self.shadows_images = {
             "straight": pg.image.load("assets/shadows/player_shadow_m.png").convert_alpha(),
-            "left": pg.image.load("assets/shadows/player_shadow_l1.png").convert_alpha(),
-            "right": pg.image.load("assets/shadows/player_shadow_r2.png").convert_alpha()
+            "left1": pg.image.load("assets/shadows/player_shadow_l1.png").convert_alpha(),
+            "left2": pg.image.load("assets/shadows/player_shadow_l2.png").convert_alpha(),
+            "right1": pg.image.load("assets/shadows/player_shadow_r1.png").convert_alpha(),
+            "right2": pg.image.load("assets/shadows/player_shadow_r2.png").convert_alpha()
         }
         self.shadow = self.shadows_images["straight"]
+        self.bank_frames = ["left2", "left1", "straight", "right1", "right2"]
+        self.bank_index = 2 # Start with the straight image
+        self.bank_timer = 0
+        self.bank_delay = 4 # each 4 frames of loop, change the image to the next one in the bank_frames 
 
     def handle_input(self, keys):
         if keys[pg.K_LEFT]:
@@ -27,15 +35,22 @@ class Player:
             self.y -= self.speed
         if keys[pg.K_DOWN]:
             self.y += self.speed
-        if keys[pg.K_LEFT]:
-            self.image = self.images["left"]
-            self.shadow = self.shadows_images["left"]
-        elif keys[pg.K_RIGHT]:
-            self.image = self.images["right"]
-            self.shadow = self.shadows_images["right"]
-        else:
-            self.image = self.images["straight"]
-            self.shadow = self.shadows_images["straight"]
+        self.bank_timer += 1
+        if self.bank_timer >= self.bank_delay:
+            self.bank_timer = 0
+            if keys[pg.K_LEFT] and self.bank_index > 0:
+                self.bank_index -= 1
+            elif keys[pg.K_RIGHT] and self.bank_index < 4:
+                self.bank_index += 1
+            elif not keys[pg.K_LEFT] and not keys[pg.K_RIGHT] and self.bank_index != 2:
+                if self.bank_index < 2:
+                    self.bank_index += 1
+                else:
+                    self.bank_index -= 1
+
+        current_frame = self.bank_frames[self.bank_index]
+        self.image = self.images[current_frame]
+        self.shadow = self.shadows_images[current_frame]
 
         # limit player movement to the screen boundaries
         self.x = max(0, min(self.x, 700 - 64))
