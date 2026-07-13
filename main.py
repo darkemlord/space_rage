@@ -1,159 +1,14 @@
 import pygame as pg
-import random 
+import random
+
+from entities.player import Player
+from entities.bullet import Bullet
+from entities.enemy import Enemy
+from entities.mine import Mine
+from entities.explosion import Explosion
 
 pg.init()
 
-# create a Player class to handle player movement and drawing
-class Player:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.speed = 5
-        self.images = {
-            "straight": pg.image.load("assets/player/player_b_m.png").convert_alpha(),
-            "left": pg.image.load("assets/player/player_b_l1.png").convert_alpha(),
-            "right": pg.image.load("assets/player/player_b_r2.png").convert_alpha()
-        }
-        self.shadows_images = {
-            "straight": pg.image.load("assets/shadows/player_shadow_m.png").convert_alpha(),
-            "left": pg.image.load("assets/shadows/player_shadow_l1.png").convert_alpha(),
-            "right": pg.image.load("assets/shadows/player_shadow_r2.png").convert_alpha()
-        }
-        self.shadow = self.shadows_images["straight"]
-    
-    def handle_input(self, keys):
-        if keys[pg.K_LEFT]:
-            self.x -= self.speed
-        if keys[pg.K_RIGHT]:
-            self.x += self.speed
-        if keys[pg.K_UP]:
-            self.y -= self.speed
-        if keys[pg.K_DOWN]:
-            self.y += self.speed
-        if keys[pg.K_LEFT]:
-            self.image = self.images["left"]
-            self.shadow = self.shadows_images["left"]
-        elif keys[pg.K_RIGHT]:
-            self.image = self.images["right"]
-            self.shadow = self.shadows_images["right"]
-        else:
-            self.image = self.images["straight"]
-            self.shadow = self.shadows_images["straight"]
-
-        # limit player movement to the screen boundaries
-        self.x = max(0, min(self.x, 700 - 64))
-        self.y = max(0, min(self.y, 800 - 64))
-
-    def draw(self, screen):
-        screen.blit(self.shadow, (self.x + 6, self.y + 6))  
-        screen.blit(self.image, (self.x, self.y))
-
-    def get_rect(self):
-        return pg.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
-
-class Bullet:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.speed = 10
-        self.image = pg.image.load("assets/effects/vulcan_1.png").convert_alpha()
-
-    def update(self):
-        self.y -= self.speed
-
-    def draw(self, screen):
-        screen.blit(self.image, (self.x, self.y))
-
-    def is_off_screen(self):
-        return self.y < 0
-    
-    def get_rect(self):
-        return pg.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
-
-class Enemy:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.speed = 2
-        self.image = pg.image.load("assets/enemies/enemy_1_r_m.png").convert_alpha()
-        self.shadow = pg.image.load("assets/shadows/enemy_1_shadow_m.png").convert_alpha()
-
-    def update(self):
-        self.y += self.speed
-
-    def draw(self, screen):
-        screen.blit(self.shadow, (self.x + 6, self.y + 6))
-        screen.blit(self.image, (self.x, self.y))
-
-    def is_off_screen(self):
-        return self.y > 800
-
-    def get_rect(self):
-        return pg.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
-
-class Explosion:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.frames = []
-        for i in range(1, 12):
-            filename = f"assets/explosions/explosion_1_{i:02d}.png"
-            self.frames.append(pg.image.load(filename).convert_alpha())
-        self.frame_index = 0
-        self.frame_timer = 0
-        self.frame_delay = 3
-        self.image = self.frames[self.frame_index]
-
-
-    def update(self):
-        self.frame_timer += 1
-        if self.frame_timer >= self.frame_delay:
-            self.frame_timer = 0
-            self.frame_index += 1
-            if self.frame_index < len(self.frames):
-                self.image = self.frames[self.frame_index]
-
-    def draw(self, screen):
-        screen.blit(self.image, (self.x, self.y))
-
-    def is_finished(self):
-        return self.frame_index >= len(self.frames)
-    
-class Mines: 
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
-        self.speed = 2
-        self.frames = []
-        for i in range(1, 10):
-            filename = f"assets/mines/mine_1_{i:02d}.png"
-            self.frames.append(pg.image.load(filename).convert_alpha())
-        self.frame_index = 0
-        self.frame_timer = 0
-        self.frame_delay = 5
-        self.image = self.frames[self.frame_index]
-        self.shadow = pg.image.load("assets/shadows/mine_1_shadow_01.png").convert_alpha()
-
-    def update(self):
-        self.y += self.speed
-        self.frame_timer += 1
-        if self.frame_timer >= self.frame_delay:
-            self.frame_timer = 0
-            self.frame_index += 1
-            if self.frame_index >= len(self.frames):
-                self.frame_index = 0
-            self.image = self.frames[self.frame_index]
-
-    def draw(self, screen):
-        screen.blit(self.shadow, (self.x + 6, self.y + 6))
-        screen.blit(self.image, (self.x, self.y))
-
-    def is_off_screen(self):
-        return self.y > 800
-    
-    def get_rect(self):
-        return pg.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
-    
 screen = pg.display.set_mode((700, 800))
 pg.display.set_caption("My Game")
 
@@ -168,7 +23,7 @@ player = Player(700 // 2 - 32, 800 - 100)
 bullets = []
 enemies = []
 spawn_timer = 0
-spawn_interval = 60  
+spawn_interval = 60
 explosions = []
 mines = []
 mine_spawn_timer = 0
@@ -183,7 +38,7 @@ game_over = False
 while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
-            running = False        
+            running = False
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_SPACE:
                 bullets.append(Bullet(player.x + 29, player.y - 10))  # Adjust bullet position to be centered on the player
@@ -225,7 +80,7 @@ while running:
         mine_spawn_timer += 1
         if mine_spawn_timer >= mine_spawn_interval:
             mine_spawn_timer = 0
-            mines.append(Mines(random.randint(0, 700 - 48), -48))  # Spawn mine at random x position
+            mines.append(Mine(random.randint(0, 700 - 48), -48))  # Spawn mine at random x position
         for mine in mines:
             mine.update()
         mines_to_keep = []
@@ -250,7 +105,7 @@ while running:
                 score += 10  # Increase score when an enemy is hit
                 break
         if not hit:
-            enemies_alive.append(enemy)  # Keep the enemy if it wasn't hit'
+            enemies_alive.append(enemy)  # Keep the enemy if it wasn't hit
     enemies = enemies_alive
     bullets = bullets_remaining  # Update the bullets list to only include remaining bullets
 
